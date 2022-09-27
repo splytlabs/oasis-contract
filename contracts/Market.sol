@@ -7,16 +7,6 @@ import '@openzeppelin/contracts/token/ERC721/IERC721.sol';
 import '@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol';
 
 contract Market is IMarket, IERC721Receiver {
-  //   struct Lending {
-  //     address lender;
-  //     address nftAddress;
-  //     uint256 nftId;
-  //     uint64 createTime;
-  //     uint64 minDuration;
-  //     uint64 maxDuration;
-  //     uint8 shareRatio;
-  //     address paymentToken;
-  //   }
   mapping(address => mapping(uint256 => address)) private lenderMapping;
   mapping(address => mapping(uint256 => Lending)) private lendingMapping;
   mapping(address => mapping(uint256 => Renting)) private RentingMapping;
@@ -40,7 +30,7 @@ contract Market is IMarket, IERC721Receiver {
     Lend lend = new Lend(shareRatio, paymentToken, lendValidUntil, maxDuration);
     IERC721(nftAddress).approve(address(lend), nftId);
     lend.stake(nftAddress, nftId);
- 
+
     Lending storage lending_ = lendingMapping[nftAddress][nftId];
 
     lending_.lender = msg.sender;
@@ -57,7 +47,28 @@ contract Market is IMarket, IERC721Receiver {
     emit CreateLendOrder(msg.sender, nftAddress, nftId, minDuration, maxDuration, shareRatio, paymentToken);
   }
 
-  function cancelLendOrder(address nftAddress, uint256 nftId) external {}
+  function cancelLendOrder(address nftAddress, uint256 nftId) external {
+    // 랜딩 여부, 본인 여부 확인
+    Lending storage lending_ = lendingMapping[nftAddress][nftId];
+    require(lending_.lender == msg.sender, 'not lender');
+
+    // redeem 호출로 돌려주기
+    Lend(lending_.lendContract).redeem();
+
+    // event 발생
+    emit CancelLendOrder(lending_.lender, nftAddress, nftId);
+
+    // 상태 초기화
+    lending_.lender = address(0);
+    lending_.nftAddress = address(0);
+    lending_.nftId = 0;
+    lending_.createTime = 0;
+    lending_.minDuration = 0;
+    lending_.maxDuration = 0;
+    lending_.shareRatio = 0;
+    lending_.paymentToken = address(0);
+    lending_.lendContract = address(0);
+  }
 
   function getLendOrder(address nftAddress, uint256 nftId) external view returns (Lending memory) {
     return lendingMapping[nftAddress][nftId];
@@ -69,25 +80,21 @@ contract Market is IMarket, IERC721Receiver {
     uint64 duration,
     address user
   ) external {
-    // lending 상태인지 확인
     Lending storage lending_ = lendingMapping[nftAddress][nftId];
     require(lending_.lender != address(0), 'not yet lend');
 
-    // Lend의 rent 실행
-    Renting storage renting_ = RentingMapping[nftAddress][nftId];
     Lend(lending_.lendContract).rent(duration, user);
+    Renting storage renting_ = RentingMapping[nftAddress][nftId];
 
-    // rent 상태 업데이트
     renting_.renter = msg.sender;
     renting_.lender = lending_.lender;
     renting_.nftAddress = nftAddress;
     renting_.nftId = nftId;
     renting_.startTime = block.timestamp;
-    renting_.endTime =  block.timestamp + duration;
+    renting_.endTime = block.timestamp + duration;
     renting_.shareRatio = lending_.shareRatio;
     renting_.paymentToken = lending_.paymentToken;
 
-    // 이벤트 발생
     emit FulfillOrder(
       msg.sender,
       lending_.lender,

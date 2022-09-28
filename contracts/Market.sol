@@ -50,17 +50,13 @@ contract Market is IMarket, IERC721Receiver {
   }
 
   function cancelLendOrder(address nftAddress, uint256 nftId) external {
-    // 랜딩 여부, 본인 여부 확인
     Lending storage lending_ = lendingMapping[nftAddress][nftId];
     require(lending_.lender == msg.sender, 'not lender');
 
-    // redeem 호출로 돌려주기
     Lend(lending_.lendContract).redeem();
 
-    // event 발생
     emit CancelLendOrder(lending_.lender, nftAddress, nftId);
 
-    // 상태 초기화
     lending_.lender = address(0);
     lending_.nftAddress = address(0);
     lending_.nftId = 0;

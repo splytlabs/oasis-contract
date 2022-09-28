@@ -4,6 +4,7 @@ import { time } from '@nomicfoundation/hardhat-network-helpers';
 import { anyValue } from '@nomicfoundation/hardhat-chai-matchers/withArgs';
 import { Lend, MockErc721 } from '../typechain-types';
 import { withoutResolve, expectRevertedAsync } from './utils';
+import { isValidMnemonic } from 'ethers/lib/utils';
 
 const RENTER = '0xD4a09BfeCEd9787aEE55199653Bd2D9700AF5cEd';
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
@@ -484,21 +485,36 @@ describe('Lend', () => {
     });
   });
 
-  // TODO: 구현필요
-  describe('getRentInfo', () => {});
-
-  // TODO: 구현필요
-  describe('isValid', () => {
-    it('컨트랙트의 상태가 유효하다면 true를 출력한다.', () => {
+  describe.only('isValid', () => {
+    it('컨트랙트의 상태가 유효하다면 true를 출력한다.', async () => {
       // given
+
       // when
+      const result = await lendContract.isValid();
+
       // then
+      expect(result).to.equals(true);
     });
 
-    it('컨트랙트의 상태가 유효하지 않다면 false를 출력한다.', () => {
+    it('컨트랙트의 상태가 유효하지 않다면 false를 출력한다.', async () => {
       // given
+      const latestBlockTime = await time.latest();
+
+      lendContract = await lendFactory.deploy(
+        DEFUALT_SHARE_RATION,
+        DEFUALT_SHARE_TOKEN,
+        latestBlockTime - DEFULAT_LEND_VALID_UNTIL_OFFSET,
+        DEFAULT_MAX_RENT_DURATION
+      );
+
       // when
+      const result = await lendContract.isValid();
+
       // then
+      expect(result).to.equals(false);
     });
   });
+
+  // TODO: 구현필요
+  describe('getRentInfo', () => {});
 });

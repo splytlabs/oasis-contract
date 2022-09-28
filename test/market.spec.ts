@@ -11,7 +11,7 @@ const DEFULAT_MIN_DURATION = 1000;
 const DEFULAT_MAX_DURATION = 100000;
 const DEFULAT_SHARE_RATIO = 50;
 const DEFULAT_PAYMENT_TOKEN = '0xD4a09BfeCEd9787aEE55199653Bd2D9700AF5cEd';
-const DEFULAT_LEND_VALID_UNTIL_OFFSET = 1713528000;
+const DEFULAT_LEND_VALID_UNTIL_OFFSET = 10000000;
 const DEFUALT_RENT_DURATION = 1000;
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
@@ -26,6 +26,7 @@ describe('Market', () => {
 
   let MarketContract: Market;
   let erc721Contract: MockErc721;
+  let latestBlockTime: number;
 
   before(async () => {
     MarketFactory = await ethers.getContractFactory('Market');
@@ -42,6 +43,8 @@ describe('Market', () => {
     await erc721Contract.safeMint(erc721OwnerAddress);
     await erc721Contract.safeMint(erc721OwnerAddress);
     await erc721Contract.approve(MarketContract.address, APPROVED_NFT_TOKEN_ID);
+
+    latestBlockTime = await time.latest();
   });
   describe('Create Lend', () => {
     it('Lend를 생성한다.', async () => {
@@ -52,7 +55,7 @@ describe('Market', () => {
         MarketContract.createLendOrder(
           erc721Contract.address,
           APPROVED_NFT_TOKEN_ID,
-          DEFULAT_LEND_VALID_UNTIL_OFFSET,
+          latestBlockTime + DEFULAT_LEND_VALID_UNTIL_OFFSET,
           DEFULAT_MIN_DURATION,
           DEFULAT_MAX_DURATION,
           DEFULAT_SHARE_RATIO,
@@ -69,7 +72,7 @@ describe('Market', () => {
       await MarketContract.createLendOrder(
         erc721Contract.address,
         APPROVED_NFT_TOKEN_ID,
-        DEFULAT_LEND_VALID_UNTIL_OFFSET,
+        latestBlockTime + DEFULAT_LEND_VALID_UNTIL_OFFSET,
         DEFULAT_MIN_DURATION,
         DEFULAT_MAX_DURATION,
         DEFULAT_SHARE_RATIO,
@@ -81,7 +84,7 @@ describe('Market', () => {
         MarketContract.createLendOrder(
           erc721Contract.address,
           APPROVED_NFT_TOKEN_ID,
-          DEFULAT_LEND_VALID_UNTIL_OFFSET,
+          latestBlockTime + DEFULAT_LEND_VALID_UNTIL_OFFSET,
           DEFULAT_MIN_DURATION,
           DEFULAT_MAX_DURATION,
           DEFULAT_SHARE_RATIO,
@@ -100,7 +103,7 @@ describe('Market', () => {
         MarketContract.createLendOrder(
           erc721Contract.address,
           NOT_APPROVED_NFT_TOKEN_ID,
-          DEFULAT_LEND_VALID_UNTIL_OFFSET,
+          latestBlockTime + DEFULAT_LEND_VALID_UNTIL_OFFSET,
           DEFULAT_MIN_DURATION,
           DEFULAT_MAX_DURATION,
           DEFULAT_SHARE_RATIO,
@@ -121,7 +124,7 @@ describe('Market', () => {
         MarketContract.createLendOrder(
           erc721Contract.address,
           APPROVED_NFT_TOKEN_ID,
-          DEFULAT_LEND_VALID_UNTIL_OFFSET,
+          latestBlockTime + DEFULAT_LEND_VALID_UNTIL_OFFSET,
           DEFULAT_MIN_DURATION,
           DEFULAT_MAX_DURATION,
           DEFULAT_SHARE_RATIO,
@@ -149,7 +152,7 @@ describe('Market', () => {
       await MarketContract.createLendOrder(
         erc721Contract.address,
         APPROVED_NFT_TOKEN_ID,
-        DEFULAT_LEND_VALID_UNTIL_OFFSET,
+        latestBlockTime + DEFULAT_LEND_VALID_UNTIL_OFFSET,
         DEFULAT_MIN_DURATION,
         DEFULAT_MAX_DURATION,
         DEFULAT_SHARE_RATIO,
@@ -222,10 +225,6 @@ describe('Market', () => {
   });
 
   describe('Fullfill Lend', () => {
-    let latestBlockTime: number;
-    beforeEach(async () => {
-      latestBlockTime = await time.latest();
-    });
     it('Nft가 렌트 중이 아니라면 Rent할 수 있다.', async () => {
       // given
       await MarketContract.createLendOrder(
@@ -350,7 +349,7 @@ describe('Market', () => {
       await MarketContract.createLendOrder(
         erc721Contract.address,
         APPROVED_NFT_TOKEN_ID,
-        DEFULAT_LEND_VALID_UNTIL_OFFSET,
+        latestBlockTime + DEFULAT_LEND_VALID_UNTIL_OFFSET,
         DEFULAT_MIN_DURATION,
         DEFULAT_MAX_DURATION,
         DEFULAT_SHARE_RATIO,
@@ -362,11 +361,10 @@ describe('Market', () => {
         await MarketContract.getLendOrder(erc721Contract.address, APPROVED_NFT_TOKEN_ID);
 
       // then
-      const latestBlockTime = await time.latest();
       expect(lender).to.be.equal(owner.address);
       expect(nftAddress).to.be.equal(erc721Contract.address);
       expect(nftId).to.be.equal(APPROVED_NFT_TOKEN_ID);
-      expect(createTime).to.be.equal(latestBlockTime);
+      expect(createTime).to.be.equal(await time.latest());
       expect(minDuration).to.be.equal(DEFULAT_MIN_DURATION);
       expect(maxDuration).to.be.equal(DEFULAT_MAX_DURATION);
       expect(shareRatio).to.be.equal(DEFULAT_SHARE_RATIO);

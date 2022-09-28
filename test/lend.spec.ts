@@ -4,10 +4,10 @@ import { time } from '@nomicfoundation/hardhat-network-helpers';
 import { anyValue } from '@nomicfoundation/hardhat-chai-matchers/withArgs';
 import { Lend, MockErc721 } from '../typechain-types';
 import { withoutResolve, expectRevertedAsync } from './utils';
-import { isValidMnemonic } from 'ethers/lib/utils';
 
 const RENTER = '0xD4a09BfeCEd9787aEE55199653Bd2D9700AF5cEd';
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
+const ZERO_NUMBER = ethers.BigNumber.from('0');
 
 const DEFULAT_LEND_VALID_UNTIL_OFFSET = 10000000;
 
@@ -485,7 +485,7 @@ describe('Lend', () => {
     });
   });
 
-  describe.only('isValid', () => {
+  describe('isValid', () => {
     it('컨트랙트의 상태가 유효하다면 true를 출력한다.', async () => {
       // given
 
@@ -515,6 +515,36 @@ describe('Lend', () => {
     });
   });
 
-  // TODO: 구현필요
-  describe('getRentInfo', () => {});
+  describe('getRentInfo', () => {
+    beforeEach(async () => {
+      await lendContract.stake(erc721Contract.address, APPROVED_NFT_TOKEN_ID);
+    });
+    it('Rent를 했다면 UserInfo, paymentToken, shareRation 정보를 반환한다.', async () => {
+      // given
+      await lendContract.rent(DEFUALT_RENT_DURATION, RENTER);
+
+      // when
+      const [userInfo, paymentToken, shareRatio] = await lendContract.getRentInfo();
+
+      // then
+      const latestBlockTimeStamp = await time.latest();
+      expect(userInfo.start).to.be.equal(latestBlockTimeStamp);
+      expect(userInfo.end).to.be.equal(latestBlockTimeStamp + DEFUALT_RENT_DURATION);
+      expect(userInfo.user).to.be.equal(RENTER);
+      expect(paymentToken).to.be.equal(DEFUALT_SHARE_TOKEN);
+      expect(shareRatio).to.be.equal(DEFUALT_SHARE_RATION);
+    });
+    it('Rent하지 않았다면 UserInfo는 default 값을 반환한다.', async () => {
+      // given
+      // when
+      const [userInfo, paymentToken, shareRatio] = await lendContract.getRentInfo();
+
+      // then
+      expect(userInfo.start).to.be.equal(ZERO_NUMBER);
+      expect(userInfo.end).to.be.equal(ZERO_NUMBER);
+      expect(userInfo.user).to.be.equal(ZERO_ADDRESS);
+      expect(paymentToken).to.be.equal(DEFUALT_SHARE_TOKEN);
+      expect(shareRatio).to.be.equal(DEFUALT_SHARE_RATION);
+    });
+  });
 });

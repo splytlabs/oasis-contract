@@ -129,7 +129,9 @@ contract Lend is ILend, Ownable, IERC721Receiver {
       address,
       uint8
     )
-  {}
+  {
+    return (_userInfo, paymentToken, shareRatio );
+  }
 
   function isValid() public view override returns (bool) {
     return block.timestamp < _lendValidUntil;

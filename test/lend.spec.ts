@@ -167,7 +167,7 @@ describe('Lend', () => {
 
       // then
       expect(address).to.be.equal(ZERO_ADDRESS);
-      expect(tokenId).to.be.equal(ethers.BigNumber.from('0'));
+      expect(tokenId).to.be.equal(ZERO_NUMBER);
     });
 
     it('성공적으로 회수되면 Redeem 이벤트가 발생한다.', async () => {
@@ -359,7 +359,7 @@ describe('Lend', () => {
       const [address, tokenId] = await lendContract.getNftInfo();
 
       expect(address).to.be.equal(ZERO_ADDRESS);
-      expect(tokenId).to.be.equal(ethers.BigNumber.from('0'));
+      expect(tokenId).to.be.equal(ZERO_NUMBER);
     });
   });
 
@@ -479,8 +479,8 @@ describe('Lend', () => {
       const [start, end, user] = await lendContract.getUserInfo();
 
       // then
-      expect(start).to.be.equal(ethers.BigNumber.from('0'));
-      expect(end).to.be.equal(ethers.BigNumber.from('0'));
+      expect(start).to.be.equal(ZERO_NUMBER);
+      expect(end).to.be.equal(ZERO_NUMBER);
       expect(user).to.be.equal(ZERO_ADDRESS);
     });
   });

@@ -11,7 +11,7 @@ contract Market is IMarket, IERC721Receiver {
   mapping(address => mapping(uint256 => Lending)) private lendingMapping;
   mapping(address => mapping(uint256 => Renting)) private RentingMapping;
 
-  // TODO: minDuration, MaxDuration, shareRation, LendValidUntil 범위 예외 처리
+  // TODO: shareRation 범위 예외 처리
   function createLendOrder(
     address nftAddress,
     uint256 nftId,
@@ -23,6 +23,8 @@ contract Market is IMarket, IERC721Receiver {
   ) external {
     require(lenderMapping[nftAddress][nftId] == address(0), 'already lend');
     require(onlyApprovedOrOwner(address(this), nftAddress, nftId), 'only approved or owner');
+    require(minDuration < maxDuration, 'maxDuration must be longer than minDuration');
+    require(block.timestamp + maxDuration < lendValidUntil, 'lendValidUntil must be longer than block.timestamp + maxDuration');
 
     address lastOwner = IERC721(nftAddress).ownerOf(nftId);
     IERC721(nftAddress).safeTransferFrom(lastOwner, address(this), nftId);

@@ -145,6 +145,44 @@ describe('Market', () => {
           DEFULAT_PAYMENT_TOKEN
         );
     });
+
+    it('minDuration이 MaxDuration 보다 크면 Lend할 수 없다.', async () => {
+      // given
+      // when
+      const result = withoutResolve(
+        MarketContract.createLendOrder(
+          erc721Contract.address,
+          APPROVED_NFT_TOKEN_ID,
+          latestBlockTime + DEFULAT_LEND_VALID_UNTIL_OFFSET,
+          DEFULAT_MIN_DURATION + DEFULAT_MAX_DURATION,
+          DEFULAT_MAX_DURATION,
+          DEFULAT_SHARE_RATIO,
+          DEFULAT_PAYMENT_TOKEN
+        )
+      );
+
+      // then
+      await expectRevertedAsync(result, 'maxDuration must be longer than minDuration');
+    });
+
+    it('MaxDuration + block.timestamp가 lendValidUntil 보다 크면 Lend할 수 없다.', async () => {
+      // given
+      // when
+      const result = withoutResolve(
+        MarketContract.createLendOrder(
+          erc721Contract.address,
+          APPROVED_NFT_TOKEN_ID,
+          latestBlockTime + DEFULAT_LEND_VALID_UNTIL_OFFSET,
+          DEFULAT_MIN_DURATION,
+          DEFULAT_MAX_DURATION + latestBlockTime + DEFULAT_LEND_VALID_UNTIL_OFFSET,
+          DEFULAT_SHARE_RATIO,
+          DEFULAT_PAYMENT_TOKEN
+        )
+      );
+
+      // then
+      await expectRevertedAsync(result, 'lendValidUntil must be longer than block.timestamp + maxDuration');
+    });
   });
 
   describe('Cancel Lend', async () => {

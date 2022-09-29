@@ -7,8 +7,9 @@ import { withoutResolve, expectRevertedAsync } from './utils';
 
 const RENTER = '0xD4a09BfeCEd9787aEE55199653Bd2D9700AF5cEd';
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
+const ZERO_NUMBER = ethers.BigNumber.from('0');
 
-const DEFULAT_LEND_VALID_UNTIL_OFFSET = 100000;
+const DEFULAT_LEND_VALID_UNTIL_OFFSET = 10000000;
 
 const DEFAULT_MAX_RENT_DURATION = 100000;
 const DEFUALT_RENT_DURATION = 1000;
@@ -166,7 +167,7 @@ describe('Lend', () => {
 
       // then
       expect(address).to.be.equal(ZERO_ADDRESS);
-      expect(tokenId).to.be.equal(ethers.BigNumber.from('0'));
+      expect(tokenId).to.be.equal(ZERO_NUMBER);
     });
 
     it('성공적으로 회수되면 Redeem 이벤트가 발생한다.', async () => {
@@ -358,7 +359,7 @@ describe('Lend', () => {
       const [address, tokenId] = await lendContract.getNftInfo();
 
       expect(address).to.be.equal(ZERO_ADDRESS);
-      expect(tokenId).to.be.equal(ethers.BigNumber.from('0'));
+      expect(tokenId).to.be.equal(ZERO_NUMBER);
     });
   });
 
@@ -478,27 +479,72 @@ describe('Lend', () => {
       const [start, end, user] = await lendContract.getUserInfo();
 
       // then
-      expect(start).to.be.equal(ethers.BigNumber.from('0'));
-      expect(end).to.be.equal(ethers.BigNumber.from('0'));
+      expect(start).to.be.equal(ZERO_NUMBER);
+      expect(end).to.be.equal(ZERO_NUMBER);
       expect(user).to.be.equal(ZERO_ADDRESS);
     });
   });
 
-  // TODO: 구현필요
-  describe('getRentInfo', () => {});
-
-  // TODO: 구현필요
   describe('isValid', () => {
-    it('컨트랙트의 상태가 유효하다면 true를 출력한다.', () => {
+    it('컨트랙트의 상태가 유효하다면 true를 출력한다.', async () => {
       // given
+
       // when
+      const result = await lendContract.isValid();
+
       // then
+      expect(result).to.equals(true);
     });
 
-    it('컨트랙트의 상태가 유효하지 않다면 false를 출력한다.', () => {
+    it('컨트랙트의 상태가 유효하지 않다면 false를 출력한다.', async () => {
+      // given
+      const latestBlockTime = await time.latest();
+
+      lendContract = await lendFactory.deploy(
+        DEFUALT_SHARE_RATION,
+        DEFUALT_SHARE_TOKEN,
+        latestBlockTime - DEFULAT_LEND_VALID_UNTIL_OFFSET,
+        DEFAULT_MAX_RENT_DURATION
+      );
+
+      // when
+      const result = await lendContract.isValid();
+
+      // then
+      expect(result).to.equals(false);
+    });
+  });
+
+  describe('getRentInfo', () => {
+    beforeEach(async () => {
+      await lendContract.stake(erc721Contract.address, APPROVED_NFT_TOKEN_ID);
+    });
+    it('Rent를 했다면 UserInfo, paymentToken, shareRation 정보를 반환한다.', async () => {
+      // given
+      await lendContract.rent(DEFUALT_RENT_DURATION, RENTER);
+
+      // when
+      const [userInfo, paymentToken, shareRatio] = await lendContract.getRentInfo();
+
+      // then
+      const latestBlockTimeStamp = await time.latest();
+      expect(userInfo.start).to.be.equal(latestBlockTimeStamp);
+      expect(userInfo.end).to.be.equal(latestBlockTimeStamp + DEFUALT_RENT_DURATION);
+      expect(userInfo.user).to.be.equal(RENTER);
+      expect(paymentToken).to.be.equal(DEFUALT_SHARE_TOKEN);
+      expect(shareRatio).to.be.equal(DEFUALT_SHARE_RATION);
+    });
+    it('Rent하지 않았다면 UserInfo는 default 값을 반환한다.', async () => {
       // given
       // when
+      const [userInfo, paymentToken, shareRatio] = await lendContract.getRentInfo();
+
       // then
+      expect(userInfo.start).to.be.equal(ZERO_NUMBER);
+      expect(userInfo.end).to.be.equal(ZERO_NUMBER);
+      expect(userInfo.user).to.be.equal(ZERO_ADDRESS);
+      expect(paymentToken).to.be.equal(DEFUALT_SHARE_TOKEN);
+      expect(shareRatio).to.be.equal(DEFUALT_SHARE_RATION);
     });
   });
 });

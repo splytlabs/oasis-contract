@@ -5,8 +5,14 @@ import './interfaces/IMarket.sol';
 import './Lend.sol';
 import '@openzeppelin/contracts/token/ERC721/IERC721.sol';
 import '@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol';
+import '@openzeppelin/contracts/utils/Counters.sol';
 
 contract Market is IMarket, IERC721Receiver {
+  using Counters for Counters.Counter;
+
+  Counters.Counter private _lendIdCounter;
+  Counters.Counter private _rentIdCounter;
+
   mapping(address => mapping(uint256 => address)) private lenderMapping;
   mapping(address => mapping(uint256 => Lending)) private lendingMapping;
   mapping(address => mapping(uint256 => Renting)) private RentingMapping;
@@ -24,7 +30,10 @@ contract Market is IMarket, IERC721Receiver {
     require(lenderMapping[nftAddress][nftId] == address(0), 'already lend');
     require(onlyApprovedOrOwner(address(this), nftAddress, nftId), 'only approved or owner');
     require(minDuration < maxDuration, 'maxDuration must be longer than minDuration');
-    require(block.timestamp + maxDuration < lendValidUntil, 'lendValidUntil must be longer than block.timestamp + maxDuration');
+    require(
+      block.timestamp + maxDuration < lendValidUntil,
+      'lendValidUntil must be longer than block.timestamp + maxDuration'
+    );
 
     address lastOwner = IERC721(nftAddress).ownerOf(nftId);
     IERC721(nftAddress).safeTransferFrom(lastOwner, address(this), nftId);
@@ -35,6 +44,7 @@ contract Market is IMarket, IERC721Receiver {
 
     Lending storage lending_ = lendingMapping[nftAddress][nftId];
 
+    lending_.id = _lendIdCounter.current();
     lending_.lender = msg.sender;
     lending_.nftAddress = nftAddress;
     lending_.nftId = nftId;
@@ -45,8 +55,19 @@ contract Market is IMarket, IERC721Receiver {
     lending_.paymentToken = paymentToken;
     lending_.lendContract = address(lend);
 
+    _lendIdCounter.increment();
+
     lenderMapping[nftAddress][nftId] = address(lend);
-    emit CreateLendOrder(msg.sender, nftAddress, nftId, minDuration, maxDuration, shareRatio, paymentToken);
+    emit CreateLendOrder(
+      lending_.id,
+      msg.sender,
+      nftAddress,
+      nftId,
+      minDuration,
+      maxDuration,
+      shareRatio,
+      paymentToken
+    );
   }
 
   function cancelLendOrder(address nftAddress, uint256 nftId) external {
@@ -55,7 +76,7 @@ contract Market is IMarket, IERC721Receiver {
 
     Lend(lending_.lendContract).redeem();
 
-    emit CancelLendOrder(lending_.lender, nftAddress, nftId);
+    emit CancelLendOrder(lending_.id, lending_.lender, nftAddress, nftId);
 
     lending_.lender = address(0);
     lending_.nftAddress = address(0);
@@ -84,6 +105,7 @@ contract Market is IMarket, IERC721Receiver {
     Lend(lending_.lendContract).rent(duration, user);
     Renting storage renting_ = RentingMapping[nftAddress][nftId];
 
+    renting_.id = _rentIdCounter.current();
     renting_.renter = msg.sender;
     renting_.lender = lending_.lender;
     renting_.nftAddress = nftAddress;
@@ -93,7 +115,11 @@ contract Market is IMarket, IERC721Receiver {
     renting_.shareRatio = lending_.shareRatio;
     renting_.paymentToken = lending_.paymentToken;
 
+    _rentIdCounter.increment();
+
     emit FulfillOrder(
+      renting_.id,
+      lending_.id,
       msg.sender,
       lending_.lender,
       nftAddress,

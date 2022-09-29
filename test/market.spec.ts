@@ -3,6 +3,7 @@ import { ethers } from 'hardhat';
 import { time } from '@nomicfoundation/hardhat-network-helpers';
 import { Market, MockErc721 } from '../typechain-types';
 import { withoutResolve, expectRevertedAsync } from './utils';
+import { anyValue } from '@nomicfoundation/hardhat-chai-matchers/withArgs';
 
 const APPROVED_NFT_TOKEN_ID = 0;
 const NOT_APPROVED_NFT_TOKEN_ID = 1;
@@ -136,6 +137,7 @@ describe('Market', () => {
       await expect(result)
         .to.emit(MarketContract, 'CreateLendOrder')
         .withArgs(
+          anyValue,
           owner.address,
           erc721Contract.address,
           APPROVED_NFT_TOKEN_ID,
@@ -238,7 +240,7 @@ describe('Market', () => {
       // then
       await expect(result)
         .to.emit(MarketContract, 'CancelLendOrder')
-        .withArgs(owner.address, erc721Contract.address, APPROVED_NFT_TOKEN_ID);
+        .withArgs(anyValue, owner.address, erc721Contract.address, APPROVED_NFT_TOKEN_ID);
     });
 
     it('성공적으로 취소되면 Lending 상태를 초기화한다.', async () => {
@@ -246,8 +248,18 @@ describe('Market', () => {
       await MarketContract.cancelLendOrder(erc721Contract.address, APPROVED_NFT_TOKEN_ID);
 
       // when
-      const [lender, nftAddress, nftId, createTime, minDuration, maxDuration, shareRatio, paymentToken, lendContract] =
-        await MarketContract.getLendOrder(erc721Contract.address, APPROVED_NFT_TOKEN_ID);
+      const [
+        lendId,
+        lender,
+        nftAddress,
+        nftId,
+        createTime,
+        minDuration,
+        maxDuration,
+        shareRatio,
+        paymentToken,
+        lendContract,
+      ] = await MarketContract.getLendOrder(erc721Contract.address, APPROVED_NFT_TOKEN_ID);
 
       // then
       expect(lender).to.be.equal(ZERO_ADDRESS);
@@ -368,6 +380,8 @@ describe('Market', () => {
       await expect(result)
         .to.emit(MarketContract, 'FulfillOrder')
         .withArgs(
+          anyValue,
+          anyValue,
           owner.address,
           owner.address,
           erc721Contract.address,
@@ -395,7 +409,7 @@ describe('Market', () => {
       );
 
       // when
-      const [lender, nftAddress, nftId, createTime, minDuration, maxDuration, shareRatio, paymentToken] =
+      const [lendId, lender, nftAddress, nftId, createTime, minDuration, maxDuration, shareRatio, paymentToken] =
         await MarketContract.getLendOrder(erc721Contract.address, APPROVED_NFT_TOKEN_ID);
 
       // then
@@ -412,8 +426,18 @@ describe('Market', () => {
     it('Lend된 nft가 없다면 default Lending 정보를 불러온다.', async () => {
       // given
       // when
-      const [lender, nftAddress, nftId, createTime, minDuration, maxDuration, shareRatio, paymentToken, lendContract] =
-        await MarketContract.getLendOrder(erc721Contract.address, APPROVED_NFT_TOKEN_ID);
+      const [
+        lendId,
+        lender,
+        nftAddress,
+        nftId,
+        createTime,
+        minDuration,
+        maxDuration,
+        shareRatio,
+        paymentToken,
+        lendContract,
+      ] = await MarketContract.getLendOrder(erc721Contract.address, APPROVED_NFT_TOKEN_ID);
 
       // then
       expect(lender).to.be.equal(ZERO_ADDRESS);

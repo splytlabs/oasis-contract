@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 interface IMarket {
   struct Lending {
+    uint256 id;
     address lender;
     address nftAddress;
     uint256 nftId;
@@ -15,6 +16,7 @@ interface IMarket {
   }
 
   struct Renting {
+    uint256 id;
     address renter;
     address lender;
     address nftAddress;
@@ -26,6 +28,7 @@ interface IMarket {
   }
 
   event CreateLendOrder(
+    uint256 lendId,
     address lender,
     address nftAddress,
     uint256 nftId,
@@ -35,9 +38,11 @@ interface IMarket {
     address paymentToken
   );
 
-  event CancelLendOrder(address lender, address nftAddress, uint256 nftId);
+  event CancelLendOrder(uint256 lendId, address lender, address nftAddress, uint256 nftId);
 
   event FulfillOrder(
+    uint256 rentId,
+    uint256 lendId,
     address renter,
     address lender,
     address nftAddress,

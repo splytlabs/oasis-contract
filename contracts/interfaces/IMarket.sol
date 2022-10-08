@@ -72,5 +72,5 @@ interface IMarket {
     uint256 nftId,
     uint64 duration,
     address user
-  ) external;
+  ) external payable;
 }

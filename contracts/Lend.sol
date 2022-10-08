@@ -97,7 +97,7 @@ contract Lend is ILend, Ownable, IERC721Receiver {
   }
 
   function setPricePerDay(uint64 pricePerDay_) external override onlyOwner {
-    require(_rentExpired() == true, 'cannot set shareRatio');
+    require(_rentExpired() == true, 'cannot set pricePerDay');
 
     pricePerDay = pricePerDay_;
     emit PricePerDayUpdate(pricePerDay_);

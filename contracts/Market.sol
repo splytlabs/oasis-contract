@@ -17,7 +17,6 @@ contract Market is IMarket, IERC721Receiver {
   mapping(address => mapping(uint256 => Lending)) private lendingMapping;
   mapping(address => mapping(uint256 => Renting)) private RentingMapping;
 
-  // TODO: shareRation 범위 예외 처리
   function createLendOrder(
     address nftAddress,
     uint256 nftId,
@@ -98,11 +97,18 @@ contract Market is IMarket, IERC721Receiver {
     uint256 nftId,
     uint64 duration,
     address user
-  ) external {
+  ) external payable {
     Lending storage lending_ = lendingMapping[nftAddress][nftId];
     require(lending_.lender != address(0), 'not yet lend');
 
+    // msg.value가 pricePerDay * (duration / 86400)와 같지 않으면 에러 출력
+    require(msg.value == lending_.pricePerDay * (duration / 86400), 'not match the value');
+
     Lend(lending_.lendContract).rent(duration, user);
+
+    // lender에게 msg.value 전달
+    payable(lending_.lender).transfer(msg.value);
+
     Renting storage renting_ = RentingMapping[nftAddress][nftId];
 
     renting_.id = _rentIdCounter.current();

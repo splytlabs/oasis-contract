@@ -24,7 +24,7 @@ contract Market is IMarket, IERC721Receiver {
     uint64 lendValidUntil,
     uint64 minDuration,
     uint64 maxDuration,
-    uint8 shareRatio,
+    uint64 pricePerDay,
     address paymentToken
   ) external {
     require(lenderMapping[nftAddress][nftId] == address(0), 'already lend');
@@ -38,7 +38,7 @@ contract Market is IMarket, IERC721Receiver {
     address lastOwner = IERC721(nftAddress).ownerOf(nftId);
     IERC721(nftAddress).safeTransferFrom(lastOwner, address(this), nftId);
 
-    Lend lend = new Lend(shareRatio, paymentToken, lendValidUntil, maxDuration);
+    Lend lend = new Lend(pricePerDay, paymentToken, lendValidUntil, maxDuration);
     IERC721(nftAddress).approve(address(lend), nftId);
     lend.stake(nftAddress, nftId);
 
@@ -51,7 +51,7 @@ contract Market is IMarket, IERC721Receiver {
     lending_.createTime = block.timestamp;
     lending_.minDuration = minDuration;
     lending_.maxDuration = maxDuration;
-    lending_.shareRatio = shareRatio;
+    lending_.pricePerDay = pricePerDay;
     lending_.paymentToken = paymentToken;
     lending_.lendContract = address(lend);
 
@@ -65,7 +65,7 @@ contract Market is IMarket, IERC721Receiver {
       nftId,
       minDuration,
       maxDuration,
-      shareRatio,
+      pricePerDay,
       paymentToken
     );
   }
@@ -84,7 +84,7 @@ contract Market is IMarket, IERC721Receiver {
     lending_.createTime = 0;
     lending_.minDuration = 0;
     lending_.maxDuration = 0;
-    lending_.shareRatio = 0;
+    lending_.pricePerDay = 0;
     lending_.paymentToken = address(0);
     lending_.lendContract = address(0);
   }
@@ -112,7 +112,7 @@ contract Market is IMarket, IERC721Receiver {
     renting_.nftId = nftId;
     renting_.startTime = block.timestamp;
     renting_.endTime = block.timestamp + duration;
-    renting_.shareRatio = lending_.shareRatio;
+    renting_.pricePerDay = lending_.pricePerDay;
     renting_.paymentToken = lending_.paymentToken;
 
     _rentIdCounter.increment();
@@ -126,7 +126,7 @@ contract Market is IMarket, IERC721Receiver {
       nftId,
       block.timestamp,
       duration + block.timestamp,
-      lending_.shareRatio,
+      lending_.pricePerDay,
       lending_.paymentToken
     );
   }

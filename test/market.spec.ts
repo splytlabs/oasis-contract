@@ -10,17 +10,20 @@ const NOT_APPROVED_NFT_TOKEN_ID = 1;
 
 const DEFULAT_MIN_DURATION = 1000;
 const DEFULAT_MAX_DURATION = 100000;
-const DEFULAT_SHARE_RATIO = 50;
+const DEFULAT_PRICE_PER_DAY = 10;
 const DEFULAT_PAYMENT_TOKEN = '0xD4a09BfeCEd9787aEE55199653Bd2D9700AF5cEd';
 const DEFULAT_LEND_VALID_UNTIL_OFFSET = 10000000;
-const DEFUALT_RENT_DURATION = 1000;
+const DEFUALT_RENT_DURATION = 86400;
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 const ZERO_NUMBER = ethers.BigNumber.from('0');
 const RENTER = '0xD4a09BfeCEd9787aEE55199653Bd2D9700AF5cEd';
 const OTHER_RENTER = '0x4bE816dC8e3D03f52af42157B91e6cA981F28499';
 
-describe('Market', () => {
+const UNIX_TIME_FOR_A_DAY = 86400;
+const UNIT_OF_PRICE = 1e18;
+
+describe.only('Market', () => {
   let MarketFactory: any;
   let erc721Factory: any;
   let erc721OwnerAddress: string;
@@ -59,7 +62,7 @@ describe('Market', () => {
           latestBlockTime + DEFULAT_LEND_VALID_UNTIL_OFFSET,
           DEFULAT_MIN_DURATION,
           DEFULAT_MAX_DURATION,
-          DEFULAT_SHARE_RATIO,
+          DEFULAT_PRICE_PER_DAY,
           DEFULAT_PAYMENT_TOKEN
         )
       );
@@ -76,7 +79,7 @@ describe('Market', () => {
         latestBlockTime + DEFULAT_LEND_VALID_UNTIL_OFFSET,
         DEFULAT_MIN_DURATION,
         DEFULAT_MAX_DURATION,
-        DEFULAT_SHARE_RATIO,
+        DEFULAT_PRICE_PER_DAY,
         DEFULAT_PAYMENT_TOKEN
       );
 
@@ -88,7 +91,7 @@ describe('Market', () => {
           latestBlockTime + DEFULAT_LEND_VALID_UNTIL_OFFSET,
           DEFULAT_MIN_DURATION,
           DEFULAT_MAX_DURATION,
-          DEFULAT_SHARE_RATIO,
+          DEFULAT_PRICE_PER_DAY,
           DEFULAT_PAYMENT_TOKEN
         )
       );
@@ -107,7 +110,7 @@ describe('Market', () => {
           latestBlockTime + DEFULAT_LEND_VALID_UNTIL_OFFSET,
           DEFULAT_MIN_DURATION,
           DEFULAT_MAX_DURATION,
-          DEFULAT_SHARE_RATIO,
+          DEFULAT_PRICE_PER_DAY,
           DEFULAT_PAYMENT_TOKEN
         )
       );
@@ -128,7 +131,7 @@ describe('Market', () => {
           latestBlockTime + DEFULAT_LEND_VALID_UNTIL_OFFSET,
           DEFULAT_MIN_DURATION,
           DEFULAT_MAX_DURATION,
-          DEFULAT_SHARE_RATIO,
+          DEFULAT_PRICE_PER_DAY,
           DEFULAT_PAYMENT_TOKEN
         )
       );
@@ -143,7 +146,7 @@ describe('Market', () => {
           APPROVED_NFT_TOKEN_ID,
           DEFULAT_MIN_DURATION,
           DEFULAT_MAX_DURATION,
-          DEFULAT_SHARE_RATIO,
+          DEFULAT_PRICE_PER_DAY,
           DEFULAT_PAYMENT_TOKEN
         );
     });
@@ -158,7 +161,7 @@ describe('Market', () => {
           latestBlockTime + DEFULAT_LEND_VALID_UNTIL_OFFSET,
           DEFULAT_MIN_DURATION + DEFULAT_MAX_DURATION,
           DEFULAT_MAX_DURATION,
-          DEFULAT_SHARE_RATIO,
+          DEFULAT_PRICE_PER_DAY,
           DEFULAT_PAYMENT_TOKEN
         )
       );
@@ -177,7 +180,7 @@ describe('Market', () => {
           latestBlockTime + DEFULAT_LEND_VALID_UNTIL_OFFSET,
           DEFULAT_MIN_DURATION,
           DEFULAT_MAX_DURATION + latestBlockTime + DEFULAT_LEND_VALID_UNTIL_OFFSET,
-          DEFULAT_SHARE_RATIO,
+          DEFULAT_PRICE_PER_DAY,
           DEFULAT_PAYMENT_TOKEN
         )
       );
@@ -195,7 +198,7 @@ describe('Market', () => {
         latestBlockTime + DEFULAT_LEND_VALID_UNTIL_OFFSET,
         DEFULAT_MIN_DURATION,
         DEFULAT_MAX_DURATION,
-        DEFULAT_SHARE_RATIO,
+        DEFULAT_PRICE_PER_DAY,
         DEFULAT_PAYMENT_TOKEN
       );
     });
@@ -211,7 +214,10 @@ describe('Market', () => {
 
     it('Nft가 렌트 중일 때는 Lend를 취소할 수 없다.', async () => {
       // given
-      await MarketContract.fulfillOrder(erc721Contract.address, APPROVED_NFT_TOKEN_ID, DEFUALT_RENT_DURATION, RENTER);
+      const value = DEFULAT_PRICE_PER_DAY * (DEFUALT_RENT_DURATION / UNIX_TIME_FOR_A_DAY) * UNIT_OF_PRICE;
+      await MarketContract.fulfillOrder(erc721Contract.address, APPROVED_NFT_TOKEN_ID, DEFUALT_RENT_DURATION, RENTER, {
+        value: ethers.BigNumber.from(`${value}`),
+      });
 
       // when
       const result = withoutResolve(MarketContract.cancelLendOrder(erc721Contract.address, APPROVED_NFT_TOKEN_ID));
@@ -275,6 +281,8 @@ describe('Market', () => {
   });
 
   describe('Fullfill Lend', () => {
+    const value = DEFULAT_PRICE_PER_DAY * (DEFUALT_RENT_DURATION / UNIX_TIME_FOR_A_DAY) * UNIT_OF_PRICE;
+
     it('Nft가 렌트 중이 아니라면 Rent할 수 있다.', async () => {
       // given
       await MarketContract.createLendOrder(
@@ -283,7 +291,7 @@ describe('Market', () => {
         latestBlockTime + DEFULAT_LEND_VALID_UNTIL_OFFSET,
         DEFULAT_MIN_DURATION,
         DEFULAT_MAX_DURATION,
-        DEFULAT_SHARE_RATIO,
+        DEFULAT_PRICE_PER_DAY,
         DEFULAT_PAYMENT_TOKEN
       );
 
@@ -292,7 +300,10 @@ describe('Market', () => {
         erc721Contract.address,
         APPROVED_NFT_TOKEN_ID,
         DEFUALT_RENT_DURATION,
-        RENTER
+        RENTER,
+        {
+          value: ethers.BigNumber.from(`${value}`),
+        }
       );
 
       // then
@@ -306,19 +317,24 @@ describe('Market', () => {
         latestBlockTime + DEFULAT_LEND_VALID_UNTIL_OFFSET,
         DEFULAT_MIN_DURATION,
         DEFULAT_MAX_DURATION,
-        DEFULAT_SHARE_RATIO,
+        DEFULAT_PRICE_PER_DAY,
         DEFULAT_PAYMENT_TOKEN
       );
       await MarketContract.fulfillOrder(
         erc721Contract.address,
         APPROVED_NFT_TOKEN_ID,
         DEFUALT_RENT_DURATION,
-        OTHER_RENTER
+        OTHER_RENTER,
+        {
+          value: ethers.BigNumber.from(`${value}`),
+        }
       );
 
       // when
       const result = withoutResolve(
-        MarketContract.fulfillOrder(erc721Contract.address, APPROVED_NFT_TOKEN_ID, DEFUALT_RENT_DURATION, RENTER)
+        MarketContract.fulfillOrder(erc721Contract.address, APPROVED_NFT_TOKEN_ID, DEFUALT_RENT_DURATION, RENTER, {
+          value: ethers.BigNumber.from(`${value}`),
+        })
       );
 
       // then
@@ -327,7 +343,9 @@ describe('Market', () => {
     it('Lend 되어 있지 않다면 Rent할 수 없다.', async () => {
       // when
       const result = withoutResolve(
-        MarketContract.fulfillOrder(erc721Contract.address, APPROVED_NFT_TOKEN_ID, DEFUALT_RENT_DURATION, RENTER)
+        MarketContract.fulfillOrder(erc721Contract.address, APPROVED_NFT_TOKEN_ID, DEFUALT_RENT_DURATION, RENTER, {
+          value: ethers.BigNumber.from(`${value}`),
+        })
       );
 
       // then
@@ -341,14 +359,16 @@ describe('Market', () => {
         latestBlockTime + DEFULAT_LEND_VALID_UNTIL_OFFSET,
         DEFULAT_MIN_DURATION,
         DEFULAT_MAX_DURATION,
-        DEFULAT_SHARE_RATIO,
+        DEFULAT_PRICE_PER_DAY,
         DEFULAT_PAYMENT_TOKEN
       );
       await time.increase(DEFULAT_LEND_VALID_UNTIL_OFFSET + 1000);
 
       // when
       const result = withoutResolve(
-        MarketContract.fulfillOrder(erc721Contract.address, APPROVED_NFT_TOKEN_ID, DEFUALT_RENT_DURATION, RENTER)
+        MarketContract.fulfillOrder(erc721Contract.address, APPROVED_NFT_TOKEN_ID, DEFUALT_RENT_DURATION, RENTER, {
+          value: ethers.BigNumber.from(`${value}`),
+        })
       );
 
       // then
@@ -363,7 +383,7 @@ describe('Market', () => {
         latestBlockTime + DEFULAT_LEND_VALID_UNTIL_OFFSET,
         DEFULAT_MIN_DURATION,
         DEFULAT_MAX_DURATION,
-        DEFULAT_SHARE_RATIO,
+        DEFULAT_PRICE_PER_DAY,
         DEFULAT_PAYMENT_TOKEN
       );
 
@@ -372,7 +392,10 @@ describe('Market', () => {
         erc721Contract.address,
         APPROVED_NFT_TOKEN_ID,
         DEFUALT_RENT_DURATION,
-        RENTER
+        RENTER,
+        {
+          value: ethers.BigNumber.from(`${value}`),
+        }
       );
       const blockTime = await time.latest();
 
@@ -388,9 +411,58 @@ describe('Market', () => {
           APPROVED_NFT_TOKEN_ID,
           blockTime,
           blockTime + DEFUALT_RENT_DURATION,
-          DEFULAT_SHARE_RATIO,
+          DEFULAT_PRICE_PER_DAY,
           DEFULAT_PAYMENT_TOKEN
         );
+    });
+    it('선불 렌트 비용과 renter가 보낸 금액이 일치하지 않으면 에러를 출력한다. ', async () => {
+      // given
+      await MarketContract.createLendOrder(
+        erc721Contract.address,
+        APPROVED_NFT_TOKEN_ID,
+        latestBlockTime + DEFULAT_LEND_VALID_UNTIL_OFFSET,
+        DEFULAT_MIN_DURATION,
+        DEFULAT_MAX_DURATION,
+        DEFULAT_PRICE_PER_DAY,
+        DEFULAT_PAYMENT_TOKEN
+      );
+
+      // when
+      const result = withoutResolve(
+        MarketContract.fulfillOrder(erc721Contract.address, APPROVED_NFT_TOKEN_ID, DEFUALT_RENT_DURATION, RENTER, {
+          value: ZERO_NUMBER,
+        })
+      );
+
+      // then
+      await expectRevertedAsync(result, 'not match the value');
+    });
+
+    it('선불 렌트 비용과 renter가 보낸 금액이 일치해야 한다.', async () => {
+      // given
+      await MarketContract.createLendOrder(
+        erc721Contract.address,
+        APPROVED_NFT_TOKEN_ID,
+        latestBlockTime + DEFULAT_LEND_VALID_UNTIL_OFFSET,
+        DEFULAT_MIN_DURATION,
+        DEFULAT_MAX_DURATION,
+        DEFULAT_PRICE_PER_DAY,
+        DEFULAT_PAYMENT_TOKEN
+      );
+
+      // when
+      const result = await MarketContract.fulfillOrder(
+        erc721Contract.address,
+        APPROVED_NFT_TOKEN_ID,
+        DEFUALT_RENT_DURATION,
+        RENTER,
+        {
+          value: ethers.BigNumber.from(`${value}`),
+        }
+      );
+
+      // then
+      await expect(result).not.to.be.reverted;
     });
   });
 
@@ -404,12 +476,12 @@ describe('Market', () => {
         latestBlockTime + DEFULAT_LEND_VALID_UNTIL_OFFSET,
         DEFULAT_MIN_DURATION,
         DEFULAT_MAX_DURATION,
-        DEFULAT_SHARE_RATIO,
+        DEFULAT_PRICE_PER_DAY,
         DEFULAT_PAYMENT_TOKEN
       );
 
       // when
-      const [lendId, lender, nftAddress, nftId, createTime, minDuration, maxDuration, shareRatio, paymentToken] =
+      const [lendId, lender, nftAddress, nftId, createTime, minDuration, maxDuration, pricePerDay, paymentToken] =
         await MarketContract.getLendOrder(erc721Contract.address, APPROVED_NFT_TOKEN_ID);
 
       // then
@@ -419,7 +491,7 @@ describe('Market', () => {
       expect(createTime).to.be.equal(await time.latest());
       expect(minDuration).to.be.equal(DEFULAT_MIN_DURATION);
       expect(maxDuration).to.be.equal(DEFULAT_MAX_DURATION);
-      expect(shareRatio).to.be.equal(DEFULAT_SHARE_RATIO);
+      expect(pricePerDay).to.be.equal(DEFULAT_PRICE_PER_DAY);
       expect(paymentToken).to.be.equal(DEFULAT_PAYMENT_TOKEN);
     });
 

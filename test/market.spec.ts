@@ -23,7 +23,7 @@ const OTHER_RENTER = '0x4bE816dC8e3D03f52af42157B91e6cA981F28499';
 const UNIX_TIME_FOR_A_DAY = 86400;
 const UNIT_OF_PRICE = 1e18;
 
-describe.only('Market', () => {
+describe('Market', () => {
   let MarketFactory: any;
   let erc721Factory: any;
   let erc721OwnerAddress: string;
@@ -214,9 +214,9 @@ describe.only('Market', () => {
 
     it('Nft가 렌트 중일 때는 Lend를 취소할 수 없다.', async () => {
       // given
-      const value = DEFULAT_PRICE_PER_DAY * (DEFUALT_RENT_DURATION / UNIX_TIME_FOR_A_DAY) * UNIT_OF_PRICE;
+      const totalPrice = DEFULAT_PRICE_PER_DAY * (DEFUALT_RENT_DURATION / UNIX_TIME_FOR_A_DAY) * UNIT_OF_PRICE;
       await MarketContract.fulfillOrder(erc721Contract.address, APPROVED_NFT_TOKEN_ID, DEFUALT_RENT_DURATION, RENTER, {
-        value: ethers.BigNumber.from(`${value}`),
+        value: ethers.BigNumber.from(`${totalPrice}`),
       });
 
       // when
@@ -281,7 +281,7 @@ describe.only('Market', () => {
   });
 
   describe('Fullfill Lend', () => {
-    const value = DEFULAT_PRICE_PER_DAY * (DEFUALT_RENT_DURATION / UNIX_TIME_FOR_A_DAY) * UNIT_OF_PRICE;
+    const totalPrice = DEFULAT_PRICE_PER_DAY * (DEFUALT_RENT_DURATION / UNIX_TIME_FOR_A_DAY) * UNIT_OF_PRICE;
 
     it('Nft가 렌트 중이 아니라면 Rent할 수 있다.', async () => {
       // given
@@ -302,7 +302,7 @@ describe.only('Market', () => {
         DEFUALT_RENT_DURATION,
         RENTER,
         {
-          value: ethers.BigNumber.from(`${value}`),
+          value: ethers.BigNumber.from(`${totalPrice}`),
         }
       );
 
@@ -326,14 +326,14 @@ describe.only('Market', () => {
         DEFUALT_RENT_DURATION,
         OTHER_RENTER,
         {
-          value: ethers.BigNumber.from(`${value}`),
+          value: ethers.BigNumber.from(`${totalPrice}`),
         }
       );
 
       // when
       const result = withoutResolve(
         MarketContract.fulfillOrder(erc721Contract.address, APPROVED_NFT_TOKEN_ID, DEFUALT_RENT_DURATION, RENTER, {
-          value: ethers.BigNumber.from(`${value}`),
+          value: ethers.BigNumber.from(`${totalPrice}`),
         })
       );
 
@@ -344,7 +344,7 @@ describe.only('Market', () => {
       // when
       const result = withoutResolve(
         MarketContract.fulfillOrder(erc721Contract.address, APPROVED_NFT_TOKEN_ID, DEFUALT_RENT_DURATION, RENTER, {
-          value: ethers.BigNumber.from(`${value}`),
+          value: ethers.BigNumber.from(`${totalPrice}`),
         })
       );
 
@@ -367,7 +367,7 @@ describe.only('Market', () => {
       // when
       const result = withoutResolve(
         MarketContract.fulfillOrder(erc721Contract.address, APPROVED_NFT_TOKEN_ID, DEFUALT_RENT_DURATION, RENTER, {
-          value: ethers.BigNumber.from(`${value}`),
+          value: ethers.BigNumber.from(`${totalPrice}`),
         })
       );
 
@@ -394,7 +394,7 @@ describe.only('Market', () => {
         DEFUALT_RENT_DURATION,
         RENTER,
         {
-          value: ethers.BigNumber.from(`${value}`),
+          value: ethers.BigNumber.from(`${totalPrice}`),
         }
       );
       const blockTime = await time.latest();
@@ -457,7 +457,7 @@ describe.only('Market', () => {
         DEFUALT_RENT_DURATION,
         RENTER,
         {
-          value: ethers.BigNumber.from(`${value}`),
+          value: ethers.BigNumber.from(`${totalPrice}`),
         }
       );
 

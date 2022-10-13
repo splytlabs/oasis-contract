@@ -17,7 +17,6 @@ contract Market is IMarket, IERC721Receiver {
   mapping(address => mapping(uint256 => Lending)) private lendingMapping;
   mapping(address => mapping(uint256 => Renting)) private RentingMapping;
 
-  uint256 private _unitOfPrice = 1e18;
   uint32 private _unixTimeForADay = 86400;
 
   function createLendOrder(
@@ -26,7 +25,7 @@ contract Market is IMarket, IERC721Receiver {
     uint64 lendValidUntil,
     uint64 minDuration,
     uint64 maxDuration,
-    uint64 pricePerDay,
+    uint256 pricePerDay,
     address paymentToken
   ) external {
     require(lenderMapping[nftAddress][nftId] == address(0), 'already lend');
@@ -66,7 +65,7 @@ contract Market is IMarket, IERC721Receiver {
       nftAddress,
       nftId,
       minDuration,
-      maxDuration,
+      maxDuration, 
       pricePerDay,
       paymentToken
     );
@@ -105,7 +104,7 @@ contract Market is IMarket, IERC721Receiver {
     require(lending_.lender != address(0), 'not yet lend');
 
     // msg.value가 pricePerDay * (duration / 86400)와 같지 않으면 에러 출력
-    require(msg.value == lending_.pricePerDay * (duration / _unixTimeForADay) * _unitOfPrice, 'not match the value');
+    require(msg.value == lending_.pricePerDay * (duration / _unixTimeForADay), 'not match the value');
 
     Lend(lending_.lendContract).rent(duration, user);
 

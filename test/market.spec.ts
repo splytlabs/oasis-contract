@@ -10,7 +10,7 @@ const NOT_APPROVED_NFT_TOKEN_ID = 1;
 
 const DEFULAT_MIN_DURATION = 1000;
 const DEFULAT_MAX_DURATION = 100000;
-const DEFULAT_PRICE_PER_DAY = 10;
+const DEFULAT_PRICE_PER_DAY: any = ethers.BigNumber.from(`${10 * 1e18}`);
 const DEFULAT_PAYMENT_TOKEN = '0xD4a09BfeCEd9787aEE55199653Bd2D9700AF5cEd';
 const DEFULAT_LEND_VALID_UNTIL_OFFSET = 10000000;
 const DEFUALT_RENT_DURATION = 86400;
@@ -21,7 +21,6 @@ const RENTER = '0xD4a09BfeCEd9787aEE55199653Bd2D9700AF5cEd';
 const OTHER_RENTER = '0x4bE816dC8e3D03f52af42157B91e6cA981F28499';
 
 const UNIX_TIME_FOR_A_DAY = 86400;
-const UNIT_OF_PRICE = 1e18;
 
 describe('Market', () => {
   let MarketFactory: any;
@@ -214,7 +213,7 @@ describe('Market', () => {
 
     it('Nft가 렌트 중일 때는 Lend를 취소할 수 없다.', async () => {
       // given
-      const totalPrice = DEFULAT_PRICE_PER_DAY * (DEFUALT_RENT_DURATION / UNIX_TIME_FOR_A_DAY) * UNIT_OF_PRICE;
+      const totalPrice = DEFULAT_PRICE_PER_DAY * (DEFUALT_RENT_DURATION / UNIX_TIME_FOR_A_DAY);
       await MarketContract.fulfillOrder(erc721Contract.address, APPROVED_NFT_TOKEN_ID, DEFUALT_RENT_DURATION, RENTER, {
         value: ethers.BigNumber.from(`${totalPrice}`),
       });
@@ -281,7 +280,7 @@ describe('Market', () => {
   });
 
   describe('Fullfill Lend', () => {
-    const totalPrice = DEFULAT_PRICE_PER_DAY * (DEFUALT_RENT_DURATION / UNIX_TIME_FOR_A_DAY) * UNIT_OF_PRICE;
+    const totalPrice = DEFULAT_PRICE_PER_DAY * (DEFUALT_RENT_DURATION / UNIX_TIME_FOR_A_DAY);
 
     it('Nft가 렌트 중이 아니라면 Rent할 수 있다.', async () => {
       // given

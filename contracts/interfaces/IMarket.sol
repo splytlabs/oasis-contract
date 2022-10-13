@@ -10,7 +10,7 @@ interface IMarket {
     uint256 createTime;
     uint64 minDuration;
     uint64 maxDuration;
-    uint64 pricePerDay;
+    uint256 pricePerDay;
     address paymentToken;
     address lendContract;
   }
@@ -23,7 +23,7 @@ interface IMarket {
     uint256 nftId;
     uint256 startTime;
     uint256 endTime;
-    uint64 pricePerDay;
+    uint256 pricePerDay;
     address paymentToken;
   }
 
@@ -34,7 +34,7 @@ interface IMarket {
     uint256 nftId,
     uint64 minDuration,
     uint64 maxDuration,
-    uint64 pricePerDay,
+    uint256 pricePerDay,
     address paymentToken
   );
 
@@ -49,7 +49,7 @@ interface IMarket {
     uint256 nftId,
     uint256 startTime,
     uint256 endTime,
-    uint64 pricePerDay,
+    uint256 pricePerDay,
     address paymentToken
   );
 
@@ -59,7 +59,7 @@ interface IMarket {
     uint64 lendValidUntil,
     uint64 maxDuration,
     uint64 minDuration,
-    uint64 pricePerDay,
+    uint256 pricePerDay,
     address paymentToken
   ) external;
 

@@ -16,14 +16,14 @@ contract Lend is ILend, Ownable, IERC721Receiver {
   uint256 private _createdAt;
   uint64 public maxRentDuration;
 
-  uint64 public pricePerDay;
+  uint256 public pricePerDay;
   address public paymentToken;
 
   UserInfo private _userInfo; 
   NftInfo private _nftInfo;
-
+ 
   constructor(
-    uint64 pricePerDay_,
+    uint256 pricePerDay_,
     address paymentToken_,
     uint64 lendValidUntil_, 
     uint64 maxRentDuration_
@@ -96,12 +96,12 @@ contract Lend is ILend, Ownable, IERC721Receiver {
     emit MaxRentDurationUpdate(timeStamp);
   }
 
-  function setPricePerDay(uint64 pricePerDay_) external override onlyOwner {
+  function setPricePerDay(uint256 pricePerDay_) external override onlyOwner {
     require(_rentExpired() == true, 'cannot set pricePerDay');
 
     pricePerDay = pricePerDay_;
-    emit PricePerDayUpdate(pricePerDay_);
-  }
+    emit PricePerDayUpdate(pricePerDay);
+  } 
 
   function _isStaking() private view returns (bool) {
     return _nftInfo.addr != address(0);
@@ -126,7 +126,7 @@ contract Lend is ILend, Ownable, IERC721Receiver {
     returns (
       UserInfo memory,
       address,
-      uint64
+      uint256
     )
   {
     return (_userInfo, paymentToken, pricePerDay );

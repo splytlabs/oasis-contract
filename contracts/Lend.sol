@@ -16,19 +16,19 @@ contract Lend is ILend, Ownable, IERC721Receiver {
   uint256 private _createdAt;
   uint64 public maxRentDuration;
 
-  uint8 public shareRatio;
+  uint256 public pricePerDay;
   address public paymentToken;
 
-  UserInfo private _userInfo;
+  UserInfo private _userInfo; 
   NftInfo private _nftInfo;
-
+ 
   constructor(
-    uint8 shareRatio_,
+    uint256 pricePerDay_,
     address paymentToken_,
-    uint64 lendValidUntil_,
+    uint64 lendValidUntil_, 
     uint64 maxRentDuration_
   ) {
-    shareRatio = shareRatio_;
+    pricePerDay = pricePerDay_;
     paymentToken = paymentToken_;
 
     _lendValidUntil = lendValidUntil_;
@@ -38,14 +38,13 @@ contract Lend is ILend, Ownable, IERC721Receiver {
   }
 
   function stake(address nftAddress, uint256 tokenId) external override onlyOwner {
-    // TODO: NFT가 이미 staking 되어있는 사항 대응
     require(_isStaking() == false, 'already staking');
 
     _nftOwner = IERC721(nftAddress).ownerOf(tokenId);
     IERC721(nftAddress).safeTransferFrom(_nftOwner, address(this), tokenId);
 
     _nftInfo.addr = nftAddress;
-    _nftInfo.tokenId = tokenId;
+    _nftInfo.tokenId = tokenId; 
 
     emit Stake(msg.sender, nftAddress, tokenId);
   }
@@ -97,12 +96,12 @@ contract Lend is ILend, Ownable, IERC721Receiver {
     emit MaxRentDurationUpdate(timeStamp);
   }
 
-  function setShareRatio(uint8 shareRatio_) external override onlyOwner {
-    require(_rentExpired() == true, 'cannot set shareRatio');
+  function setPricePerDay(uint256 pricePerDay_) external override onlyOwner {
+    require(_rentExpired() == true, 'cannot set pricePerDay');
 
-    shareRatio = shareRatio_;
-    emit ShareRatioUpdate(shareRatio_);
-  }
+    pricePerDay = pricePerDay_;
+    emit PricePerDayUpdate(pricePerDay);
+  } 
 
   function _isStaking() private view returns (bool) {
     return _nftInfo.addr != address(0);
@@ -127,10 +126,10 @@ contract Lend is ILend, Ownable, IERC721Receiver {
     returns (
       UserInfo memory,
       address,
-      uint8
+      uint256
     )
   {
-    return (_userInfo, paymentToken, shareRatio );
+    return (_userInfo, paymentToken, pricePerDay );
   }
 
   function isValid() public view override returns (bool) {

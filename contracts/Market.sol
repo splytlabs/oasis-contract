@@ -17,14 +17,15 @@ contract Market is IMarket, IERC721Receiver {
   mapping(address => mapping(uint256 => Lending)) private lendingMapping;
   mapping(address => mapping(uint256 => Renting)) private RentingMapping;
 
-  // TODO: shareRation 범위 예외 처리
+  uint32 private _unixTimeForADay = 86400;
+
   function createLendOrder(
     address nftAddress,
     uint256 nftId,
     uint64 lendValidUntil,
     uint64 minDuration,
     uint64 maxDuration,
-    uint8 shareRatio,
+    uint256 pricePerDay,
     address paymentToken
   ) external {
     require(lenderMapping[nftAddress][nftId] == address(0), 'already lend');
@@ -38,7 +39,7 @@ contract Market is IMarket, IERC721Receiver {
     address lastOwner = IERC721(nftAddress).ownerOf(nftId);
     IERC721(nftAddress).safeTransferFrom(lastOwner, address(this), nftId);
 
-    Lend lend = new Lend(shareRatio, paymentToken, lendValidUntil, maxDuration);
+    Lend lend = new Lend(pricePerDay, paymentToken, lendValidUntil, maxDuration);
     IERC721(nftAddress).approve(address(lend), nftId);
     lend.stake(nftAddress, nftId);
 
@@ -51,7 +52,7 @@ contract Market is IMarket, IERC721Receiver {
     lending_.createTime = block.timestamp;
     lending_.minDuration = minDuration;
     lending_.maxDuration = maxDuration;
-    lending_.shareRatio = shareRatio;
+    lending_.pricePerDay = pricePerDay;
     lending_.paymentToken = paymentToken;
     lending_.lendContract = address(lend);
 
@@ -64,8 +65,8 @@ contract Market is IMarket, IERC721Receiver {
       nftAddress,
       nftId,
       minDuration,
-      maxDuration,
-      shareRatio,
+      maxDuration, 
+      pricePerDay,
       paymentToken
     );
   }
@@ -84,7 +85,7 @@ contract Market is IMarket, IERC721Receiver {
     lending_.createTime = 0;
     lending_.minDuration = 0;
     lending_.maxDuration = 0;
-    lending_.shareRatio = 0;
+    lending_.pricePerDay = 0;
     lending_.paymentToken = address(0);
     lending_.lendContract = address(0);
   }
@@ -98,11 +99,18 @@ contract Market is IMarket, IERC721Receiver {
     uint256 nftId,
     uint64 duration,
     address user
-  ) external {
+  ) external payable {
     Lending storage lending_ = lendingMapping[nftAddress][nftId];
     require(lending_.lender != address(0), 'not yet lend');
 
+    // msg.value가 pricePerDay * (duration / 86400)와 같지 않으면 에러 출력
+    require(msg.value == lending_.pricePerDay * (duration / _unixTimeForADay), 'not match the value');
+
     Lend(lending_.lendContract).rent(duration, user);
+
+    // lender에게 msg.value 전달
+    payable(lending_.lender).transfer(msg.value);
+
     Renting storage renting_ = RentingMapping[nftAddress][nftId];
 
     renting_.id = _rentIdCounter.current();
@@ -112,7 +120,7 @@ contract Market is IMarket, IERC721Receiver {
     renting_.nftId = nftId;
     renting_.startTime = block.timestamp;
     renting_.endTime = block.timestamp + duration;
-    renting_.shareRatio = lending_.shareRatio;
+    renting_.pricePerDay = lending_.pricePerDay;
     renting_.paymentToken = lending_.paymentToken;
 
     _rentIdCounter.increment();
@@ -126,7 +134,7 @@ contract Market is IMarket, IERC721Receiver {
       nftId,
       block.timestamp,
       duration + block.timestamp,
-      lending_.shareRatio,
+      lending_.pricePerDay,
       lending_.paymentToken
     );
   }

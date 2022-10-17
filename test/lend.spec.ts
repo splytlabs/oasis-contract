@@ -10,13 +10,12 @@ const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 const ZERO_NUMBER = ethers.BigNumber.from('0');
 
 const DEFULAT_LEND_VALID_UNTIL_OFFSET = 10000000;
-
 const DEFAULT_MAX_RENT_DURATION = 100000;
 const DEFUALT_RENT_DURATION = 1000;
-const RENT_DURATION_OVER_MAX = DEFAULT_MAX_RENT_DURATION + DEFUALT_RENT_DURATION;
-
-const DEFUALT_SHARE_RATION = 50;
+const DEFUALT_PRICE_PER_DAY = 10;
 const DEFUALT_SHARE_TOKEN = '0x0000000000000000000000000000000000000000';
+
+const RENT_DURATION_OVER_MAX = DEFAULT_MAX_RENT_DURATION + DEFUALT_RENT_DURATION;
 
 const APPROVED_NFT_TOKEN_ID = 0;
 const NOT_APPROVED_NFT_TOKEN_ID = 1;
@@ -41,7 +40,7 @@ describe('Lend', () => {
     const latestBlockTime = await time.latest();
 
     lendContract = await lendFactory.deploy(
-      DEFUALT_SHARE_RATION,
+      DEFUALT_PRICE_PER_DAY,
       DEFUALT_SHARE_TOKEN,
       latestBlockTime + DEFULAT_LEND_VALID_UNTIL_OFFSET,
       DEFAULT_MAX_RENT_DURATION
@@ -363,48 +362,48 @@ describe('Lend', () => {
     });
   });
 
-  describe('setShareRatio', () => {
-    const NEW_SHARE_RATIO = 10;
+  describe('setPricePerDay', () => {
+    const NEW_PRICE_PER_DAY = 15;
 
     beforeEach(async () => {
       await lendContract.stake(erc721Contract.address, APPROVED_NFT_TOKEN_ID);
     });
 
-    it('Market Contract라면 수익 공유 비율을 설정할 수 있다.', async () => {
-      const result = withoutResolve(lendContract.setShareRatio(NEW_SHARE_RATIO));
+    it('Market Contract라면 선불 렌트 가격을 설정할 수 있다.', async () => {
+      const result = withoutResolve(lendContract.setPricePerDay(NEW_PRICE_PER_DAY));
 
       await expect(result).not.to.be.reverted;
     });
 
-    it('Market Contract가 아니라면 수익 공유 비율을 설정할 수 없다.', async () => {
+    it('Market Contract가 아니라면 선불 렌트 가격을 설정할 수 없다.', async () => {
       // given
       const [_, other] = await ethers.getSigners();
       await lendContract.transferOwnership(other.address);
 
       // when
-      const result = withoutResolve(lendContract.setShareRatio(NEW_SHARE_RATIO));
+      const result = withoutResolve(lendContract.setPricePerDay(NEW_PRICE_PER_DAY));
 
       // then
       await expectRevertedAsync(result, 'Ownable: caller is not the owner');
     });
 
-    it('NFT가 Renting 상태라면 수익 공유 비율을 설정할 수 없다.', async () => {
+    it('NFT가 Renting 상태라면 선불 렌트 가격을 설정할 수 없다.', async () => {
       // given
       await lendContract.rent(DEFUALT_RENT_DURATION, RENTER);
 
       // when
-      const result = withoutResolve(lendContract.setShareRatio(NEW_SHARE_RATIO));
+      const result = withoutResolve(lendContract.setPricePerDay(NEW_PRICE_PER_DAY));
 
       // then
-      await expectRevertedAsync(result, 'cannot set shareRatio');
+      await expectRevertedAsync(result, 'cannot set pricePerDay');
     });
 
-    it('성공적으로 수익 공유 비율이 설정되었다면 ShareRatioUpdate 이벤트가 발생한다.', async () => {
+    it('성공적으로 선불 렌트 가격이 설정되었다면 PricePerDayUpdate 이벤트가 발생한다.', async () => {
       // when
-      const result = await lendContract.setShareRatio(NEW_SHARE_RATIO);
+      const result = await lendContract.setPricePerDay(NEW_PRICE_PER_DAY);
 
       // then
-      await expect(result).to.be.emit(lendContract, 'ShareRatioUpdate').withArgs(NEW_SHARE_RATIO);
+      await expect(result).to.be.emit(lendContract, 'PricePerDayUpdate').withArgs(NEW_PRICE_PER_DAY);
     });
   });
 
@@ -501,7 +500,7 @@ describe('Lend', () => {
       const latestBlockTime = await time.latest();
 
       lendContract = await lendFactory.deploy(
-        DEFUALT_SHARE_RATION,
+        DEFUALT_PRICE_PER_DAY,
         DEFUALT_SHARE_TOKEN,
         latestBlockTime - DEFULAT_LEND_VALID_UNTIL_OFFSET,
         DEFAULT_MAX_RENT_DURATION
@@ -519,12 +518,12 @@ describe('Lend', () => {
     beforeEach(async () => {
       await lendContract.stake(erc721Contract.address, APPROVED_NFT_TOKEN_ID);
     });
-    it('Rent를 했다면 UserInfo, paymentToken, shareRation 정보를 반환한다.', async () => {
+    it('Rent를 했다면 UserInfo, paymentToken, pricePerDay 정보를 반환한다.', async () => {
       // given
       await lendContract.rent(DEFUALT_RENT_DURATION, RENTER);
 
       // when
-      const [userInfo, paymentToken, shareRatio] = await lendContract.getRentInfo();
+      const [userInfo, paymentToken, pricePerDay] = await lendContract.getRentInfo();
 
       // then
       const latestBlockTimeStamp = await time.latest();
@@ -532,19 +531,19 @@ describe('Lend', () => {
       expect(userInfo.end).to.be.equal(latestBlockTimeStamp + DEFUALT_RENT_DURATION);
       expect(userInfo.user).to.be.equal(RENTER);
       expect(paymentToken).to.be.equal(DEFUALT_SHARE_TOKEN);
-      expect(shareRatio).to.be.equal(DEFUALT_SHARE_RATION);
+      expect(pricePerDay).to.be.equal(DEFUALT_PRICE_PER_DAY);
     });
     it('Rent하지 않았다면 UserInfo는 default 값을 반환한다.', async () => {
       // given
       // when
-      const [userInfo, paymentToken, shareRatio] = await lendContract.getRentInfo();
+      const [userInfo, paymentToken, pricePerDay] = await lendContract.getRentInfo();
 
       // then
       expect(userInfo.start).to.be.equal(ZERO_NUMBER);
       expect(userInfo.end).to.be.equal(ZERO_NUMBER);
       expect(userInfo.user).to.be.equal(ZERO_ADDRESS);
       expect(paymentToken).to.be.equal(DEFUALT_SHARE_TOKEN);
-      expect(shareRatio).to.be.equal(DEFUALT_SHARE_RATION);
+      expect(pricePerDay).to.be.equal(DEFUALT_PRICE_PER_DAY);
     });
   });
 });

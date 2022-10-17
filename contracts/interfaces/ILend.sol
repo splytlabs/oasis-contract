@@ -14,7 +14,7 @@ interface ILend {
   }
 
   event UserInfoUpdate(uint256 rentId, uint256 start, uint256 end, address user);
-  event ShareRatioUpdate(uint8 ratio);
+  event PricePerDayUpdate(uint256 pricePerDay);
   event MaxRentDurationUpdate(uint64 duration);
 
   event Stake(address msgSender, address nftAddress, uint256 tokenId);
@@ -34,7 +34,7 @@ interface ILend {
 
   function getNftInfo() external view returns (NftInfo memory info);
 
-  function setShareRatio(uint8 shareRatio) external;
+  function setPricePerDay(uint256 pricePerDay) external;
 
   function setMaxRentDuration(uint64 timeStamp) external;
 
@@ -46,7 +46,7 @@ interface ILend {
     returns (
       UserInfo memory user,
       address paymentToken,
-      uint8 shareRatio
+      uint256 pricePerDay
     );
 
   function isValid() external view returns (bool);
